@@ -1,0 +1,20 @@
+[
+    {
+        "url":"https://zite.zite.io",
+        "method":"get",
+        "headers":
+            {
+                "Content-Type": "application/json",
+                "x-csrftoken":"Bw2DPkHWEKH0UM5QfS4vPTVw91GREZ6GDxgcQcG29JNpRXeiYq4IkYASTgrkR9Dt"
+            },
+        "cookies":
+            {
+                "csrftoken":"Bw2DPkHWEKH0UM5QfS4vPTVw91GREZ6GDxgcQcG29JNpRXeiYq4IkYASTgrkR9Dt",
+                "zite_cookie": "n8q4lnm613dnxmtmt9c3r6tvtth7guoo"
+            },
+        "data":{}
+    },
+    {
+        
+    }
+]
