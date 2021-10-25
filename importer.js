@@ -1,57 +1,108 @@
 import http from "k6/http";
-// const data = require("./apis.json");
-const ITERATION = 1000;
+import { group } from "k6";
+import grpObj from "./group.js";
+import requestList from "./requests.js";
+import getOpt from "./options.js";
 
-const requests = [
-  {
-    url: "https://zite.zite.io",
-    method: "get",
-    headers: {
-      "Content-Type": "application/json",
-      "x-csrftoken":
-        "Bw2DPkHWEKH0UM5QfS4vPTVw91GREZ6GDxgcQcG29JNpRXeiYq4IkYASTgrkR9Dt",
-    },
-    cookies: {
-      csrftoken:
-        "Bw2DPkHWEKH0UM5QfS4vPTVw91GREZ6GDxgcQcG29JNpRXeiYq4IkYASTgrkR9Dt",
-      zite_cookie: "n8q4lnm613dnxmtmt9c3r6tvtth7guoo",
-    },
-    data: {},
-  },
-  {},
-];
+const ITERATION = __ENV.ITERATION ? __ENV.ITERATION : 1;
 
-export let options = {
-  //   stages: [
-  //     //target is no of cocurrency
-  //     { duration: "3m", target: 100 },
-  //     { duration: "1m", target: 20 },
-  //     { duration: "1m", target: 0 },
-  //   ],
-  vus: ITERATION, //no of iterations and vus must be same
-  iterations: ITERATION, //no of iterations and vus must be same
-  // maxDuration: 1000, //timeout for process
-};
+let TOKENS = [];
+
+if (!__ENV.TOKENS) {
+  console.error(
+    "No tokens given!! Please give token variable like \n TOKEN=<TOKEN_VALUE1>,<TOKEN_VALUE2>"
+  );
+}
+
+TOKENS = __ENV.TOKENS.split(",");
+
+const requests = requestList;
+
+const groups = [];
+
+TOKENS.forEach(function (token, index) {
+  groups.push(grpObj(token));
+});
+
+export let options = getOpt(ITERATION);
 
 export default function () {
-  requests.forEach(function (api, index) {
-    const headers = api.headers;
-    const cookies = api.cookies;
-    const url = api.url;
-
-    if (url !== null || url !== "") {
-      switch (api.method) {
-        case "get":
-          let res;
-          res = http.get(url, { headers: headers, cookies: cookies });
+  if (groups.length > 0) {
+    groups.forEach(function (grp, index) {
+      console.log("==== TEST FOR GROUP ", grp.group_name, " STARTED ====");
+      group(grp.group_name, function () {
+        const headers = grp.headers;
+        const cookies = grp.cookies;
+        const header_params = { headers: headers, cookies: cookies };
+        let res;
+        grp.requests.forEach(function (req, index) {
+          let url = req.url;
+          switch (req.method) {
+            case "get":
+              res = http.get(url, header_params);
+              break;
+            case "post":
+              res = http.post(url, req.data, header_params);
+              break;
+            case "put":
+              res = http.put(url, req.data, header_params);
+              break;
+            case "patch":
+              res = http.patch(url, req.data, header_params);
+              break;
+            case "delete":
+              res = http.del(url, header_params);
+              break;
+            default:
+              break;
+          }
+          console.log("================ Test Data ==============");
+          console.log("URL: " + url);
+          console.log("Token: " + grp.headers.Authorization);
           console.log("Response Status Code: " + String(res.status));
           console.log("Response time: " + String(res.timings.duration) + " ms");
-          console.log("Response TLS Version: " + String(res.tls_version));
-          break;
+          console.log("================ xxxxx =============");
+        });
+      });
+      console.log("==== TEST FOR GROUP ", grp.group_name, " ENDED ====");
+      // console.log("GROUP DURATION ", grp.token);
+    });
+  }
+  // ==========REQUEST=============
+  if (requests.length > 0) {
+    requests.forEach(function (api, index) {
+      const headers = api.headers;
+      const cookies = api.cookies;
+      const header_params = { headers: headers, cookies: cookies };
+      const url = api.url;
 
-        default:
-          break;
+      if (url !== null || url !== "") {
+        let res;
+        switch (api.method) {
+          case "get":
+            res = http.get(url, header_params);
+            break;
+          case "post":
+            res = http.post(url, api.data, header_params);
+            break;
+          case "put":
+            res = http.put(url, api.data, header_params);
+            break;
+          case "patch":
+            res = http.patch(url, api.data, header_params);
+            break;
+          case "delete":
+            res = http.delete(url, header_params);
+            break;
+          default:
+            break;
+        }
+        console.log("================ Test Data ==============");
+        console.log("URL: " + api.url);
+        console.log("Response Status Code: " + String(res.status));
+        console.log("Response time: " + String(res.timings.duration) + " ms");
+        console.log("================ xxxxx =============");
       }
-    }
-  });
+    });
+  }
 }

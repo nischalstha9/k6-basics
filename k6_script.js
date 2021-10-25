@@ -34,6 +34,7 @@ export default function () {
     "is status 200": (r) => r.status === 200,
     "body has token": (r) => r.body.includes("access_token"),
   });
+
   let access = JSON.parse(res.body).access_token;
   headers["Authorization"] = "JWT " + access;
   const book_cr_url = base_url + "account-books/";
